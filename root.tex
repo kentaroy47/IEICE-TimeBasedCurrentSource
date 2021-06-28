@@ -1,0 +1,176 @@
+\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out if you need a4paper
+
+%\documentclass[a4paper, 10pt, conference]{ieeeconf}      % Use this line for a4 paper
+
+\IEEEoverridecommandlockouts                              % This command is only needed if 
+                                                          % you want to use the \thanks command
+
+\overrideIEEEmargins                                      % Needed to meet printer requirements.
+
+% The following packages can be found on http:\\www.ctan.org
+\usepackage{graphics} % for pdf, bitmapped graphics files
+%\usepackage{graphicx}
+\usepackage[dvipdfmx]{graphicx}
+\usepackage[dvipdfmx]{color}
+\usepackage{epsfig} % for postscript graphics files
+\usepackage{mathptmx} % assumes new font selection scheme installed
+\usepackage{times} % assumes new font selection scheme installed
+\usepackage{amsmath} % assumes amsmath package installed
+\usepackage{amssymb}  % assumes amsmath package installed
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage{url}
+\usepackage{caption}
+\usepackage[ruled,vlined]{algorithm2e}
+%\include{pythonlisting}
+\usepackage{algpseudocode}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{cite}
+
+\setlength\textfloatsep{5pt}
+
+\title{\LARGE \bf
+Time-Based Current Source (TBCS): A Low-Cost PVT Adaptive Current Generator for Switched Capacitor Circuits
+}
+
+\author{Kentaro Yoshioka% <-this % stops a space
+%\thanks{*This work was not supported by any organization}% <-this % stops a space
+\thanks{
+        {\tt\small yoshioka@elec.keio.ac.jp}}
+}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract}
+VCO比較機ではdeadzone特性を使用することで自動的にIRN性能を入力に適した値に設定する。
+The proposed adaptive time-domain (ATD) comparator automatically adjusts its input-referred noise performance according to the intermediate residual input level (?Vin) during conversion. Considering
+
+入力に応じたオンデマンドのノイズと消費電力の比較器を提供。
+
+
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+スイッチドキャパシタ回路はパイプライン ADC、Pipeline-SAR ADCといった高精度・高速ADCの根幹を担う回路ブロックであり、5G、beyond 5Gといった先端通信回路を構成する。基準電流源はこのようなスイッチドキャパシタ回路におけるオペアンプ特性を決定づける重要な回路である。特に高速なスイッチドキャパシタ回路であるとオペアンプの速度（ユニティゲイン）は重要な設計パラメータであり、注意深く設計する必要がある。しかしオペアンプ自体の設計に加え基準電流源のPVTばらつき性能は大きくスイッチドキャパシタ速度に寄与する一方であまり文献で注目されてはいなかった。
+
+”A 12b 18GS/s RF Sampling ADC with an Integrated Wideband Track-and-
+ Hold Amplifier and Background Calibration"
+
+”A Calibration-Free 71.7dB SNDR 100MS/s 0.7mW Weighted-Averaging Correlated Level Shifting Pipelined SAR ADC with Speed-Enhancement Scheme”
+
+基準電流源は主にbeta-multiplierか電圧電流変換と２種類の設計アプローチがある。self-bias方式で電流を生成するbeta-multiplierは抵抗とトランジスタの温度特性が相補的であることを利用し、温度依存性をキャンセルする[references]。また電圧電流変換アプローチはPVTばらつきの影響が少ないBGR電圧源で生成した基準電圧を元に抵抗を用いて電圧ー電流変換を行う[references]。一方で両方の方式でも生成電流は抵抗値に応じて決定される。一般的な電流源は数10uAオーダであり、数10kオームのポリ抵抗阻止が用いられる。しかしこれらの抵抗値は量産時に製造ばらつきによって抵抗値は±50%ほどばらついてしまい、そのドリフトは生成電流に直接現れる。
+
+そのためこのような抵抗ばらつきは出荷テスト時にキャリブレーションするか設計マージンとして許容するのが一般的である。しかし前者は高コストなアナログテスト工数の増加を招き、後者はオペアンプのオーバーデザインにより消費電力、面積、歩留まりを悪化させる。電流源に用いる抵抗をトランジスタで置き換える研究も存在するが[hirose]、マッチングやアナログ特性が重要であるため回路面積は大きいためCMOSスケーリングに応じたコスト削減が難し。
+
+本論文では低コストかつプロセススケーラブルな電流源を実現するために時間情報を基準とする電流源(TBCS)を提案する[ISSCC2017]。具体的にはcurrent-starved inverterをADCのサンプルクロックでロックするDLL(delay-locked-loop)を構築し、セトリングした電流値を直接基準電流として用いる。current-starved inverterの遅延は電流と負荷容量で決定されるため、遅延を一定値にロックすることで一定電流を供給するレファレンスを構築できる。重要なことにTBCSはPVTに対し*適応的*な電流生成を行う。負荷容量が増加するようなPVT条件の場合、本電流源は遅延を一定に保つため生成電流は増加する。これは増加したオペアンプに対しても増大した負荷容量の影響をキャンセルし速度一定に保つ効果がある。TBCSはほぼインバータセルとデジタル回路で構成でき、高いCMOS親和性を持ちプロセススケーラビリティは高い。試作回路は28nmCMOSにおいて面積はたったの800um2でありながらPVTばらつきに対し頑強であった。
+
+[ISSCC2017]に対し追加して本論文はTBCSについてextensiveな課題探索、解析を追加する。具体的には以下のような貢献をする。
+
+- TBCSの原理、回路インプリについて深い議論を行うのに加え詳細シミュレーションによりTBCSをオペアンプとスイッチドキャパシタ回路に組み込んだ際の特性を報告し、PVT追従性を明らかにする
+
+本論文の構成について述べる。2章では従来研究とそれらの課題について述べる。3章ではTBCSの原理について説明し、4章ではTBCSの回路インプリについて議論し最後に5章でシミュレーション結果と解析について報告する。
+
+%\section{Comparison of systematic comparator power consumption}
+\section{Conventional low-power low-noise comparators}
+例として広く使用されるバンドギャップ・リファレンスを用いる電流源を図 2に示す。バンドギャップ・リファレンス回路は参照電圧VREFを生成し、
+
+
+となるような電流（IREF）を生成することができる。バンドギャップ・リファレンスは環境変動（温度、トランジスタしきい値、電源電圧等。以下PVTばらつきと呼ぶ）の影響をあまり受けずに一定の電位を生成することができる[1]ものの、抵抗値R1及びR2はPVTばらつきの影響を受けやすい。ポリ抵抗を用いることで小さい面積で大きな抵抗値を容易に作成でき、uAオーダーの電流源も容易に実現できるため頻繁に設計で使用される。しかしながらポリ抵抗はPVTばらつき感度が非常に高く、max-min抵抗値は±50%程度ばらついてしまう。そのためIref=20uAを作ろうとした場合、max min電流値はそれぞれ30uA、10uAとなってしまう。このようなばらつきはオペアンプの設計マージンを拡大させ、電力増加につながってしまう。
+
+## 適応的電流源技術
+
+PVTに適応して動作する電流源技術はミックスドシグナル製品開発上重要であり、多くの研究がなされている。主なアプローチはレプリカのアンプとチャージ用容量を用意し、オペアンプのスルーレートを直接観測し、所定のスルーレートを実現するように電流を制御するようにフィードバックをかけることではPVTに追従する適応的電流源を実現する。
+
+一方でレプリカのオペアンプはメインオペアンプの消費電力、面積が大きなオーバーヘッドとなってしまう。一方で本提案はアンプのレプリカを用意することなく、ほぼデジタル素子を用いてPVTロバストな電流源を実現しオーバーヘッドはこれらの研究に対し少ない。
+
+[https://patents.google.com/patent/US7750837B2/en](https://patents.google.com/patent/US7750837B2/en)
+
+[https://patents.google.com/patent/US8044654B2/en](https://patents.google.com/patent/US8044654B2/en)
+
+## 時間情報を用いたアナログ回路キャリブレーション技術
+
+基準クロックといった時間情報を用いてADC、回路性能を向上させる研究は存在する。
+
+デジタル回路の電源電圧をDLLを用いてロック。上記とアイデアは同様である。
+
+[https://patents.google.com/patent/US8378738B1/en](https://patents.google.com/patent/US8378738B1/en)
+
+またDLLを用いて非同期SARクロックの遅延を制御し、PVTに対してDACセトリングを最適化する研究も存在する。
+
+[https://patents.google.com/patent/US8786483B1/en](https://patents.google.com/patent/US8786483B1/en)
+
+[https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6575209](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6575209)
+
+[https://patents.google.com/patent/US8044654B2/en](https://patents.google.com/patent/US8044654B2/en)
+
+一方で本提案のようにオペアンプに用いる基準電流源のPVTばらつきを時間情報を用いて除去する研究は少ない。
+
+\section{VCO-based comparator}
+\subsection{VCO-based comparator fundamentals}
+図 3にTBCSの簡略化した回路ブロック図を示す。入力としては所定周波数のクロック（ADCのサンプルクロック等）のみ用いる。TBCSはDelay-Locked-Loop回路（DLL）と構成要素と動作は近い。基準電流源がレファレンス電流を作り出し、その出力IREFをオペアンプといったコア回路に与えられる。またcurrent-starved-inverterにIREFを与え、入力クロック（CLK）に対し遅延を加えたCLKDを出力する。図xの例では遅延器は5ステージあり各ステージ遅延をtINVとした場合、CLKDはCLKに対し5*tINVの遅延を生じる。IREFが大きいほどtINVは小さくなりその逆も然りである。そして上述の遅延器出力とCLKの反転出力（CLKB）間で位相比較を行いDLL動作と同様に遅延（5*tINV）をTDに漸近するように基準電流源を制御し遅延を一定値にロックする。
+
+
+TBCSは遅延器出力CLKDとCLKの反転出力（CLKB）間で位相比較を行い遅延（10*tDL）をCLKの半周期（TD）に漸近するよう電流を制御する。図 3右下にTBCSのプリンシパルとなる遅延器の電流-遅延特性を示す。
+
+図4のような容量負荷を駆動するcurrent sturvedインバータ(CSI)[ref]とインバータを接続した遅延ステージ考える。大信号特性を元にCSIの遅延tDを考えると、次段インバータのオンしきい値をVthとし、インバータ遅延を$t_{inv}$とすると
+
+$$t_D = \frac{V_{th}C}{I_{Ref}}+t_{inv}$$
+
+と表せる。CSIの電流源が三極管領域に入る頃には信号は次段へと伝搬しているため、そのような事象は解析にて無視できる。ここでtinvが前項より十分小さくインバータしきい値のばらつきも小さいと見なすと、tDはCとIrefによって決まると見なせる。そしてtDLを電流制御により一定遅延にロックするため、ロック時の電流はCのばらつきに応じた値が得られる。容量は電圧、温度といった環境変動に対して受ける影響は少なく、遅延tDLにロックした時の電流値は環境変動によらず一定なロバストな電流源となる。
+
+上記の解析と式よりTBCSのばらつき要因には
+
+**・負荷容量のばらつき**
+
+**・次段インバータ遅延、オンしきい値ばらつき**
+
+がある。
+
+次段インバータの影響はCSI遅延より1桁小さいため影響は少ない一方で、TBCSがロバストな電流源となるために負荷容量の絶対値ばらつきが小さいことが求められる。例えばmetal-insulator-metal(MIM)容量はミスマッチは少ないものの、絶対値ばらつきが大きいためTBCSにはそぐわない。一方で先端CMOSプロセスに主に使用される配線間寄生容量で作成するmetal-oxcide-metal(MOM)容量は絶対値ばらつきはMIM容量や抵抗素子よりも小さくTBCSに好適でありロバストな電流源を実現できる。またTBCSは容量ばらつきによって電流が変動してしまうが、次節にてこのようなTBCSのドリフトはオペアンプ特性を一定化するのに役立ちTBCSはPVTに適応的な性質を持つことを示す。
+
+ref:[https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=6807526](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=6807526)
+
+\subsection{PVTに適応した電流生成（オペアンプにとって好適なドリフトの議論)}
+→SC＋opampテストベンチを追加
+
+TBCSはトランジスタや抵抗に応じたPVTばらつきの影響は少ない反面、遅延を負荷容量の充電時間によって決めるため容量値ばらつきで生成電流が変動する。しかし興味深いことにTBCSの容量ばらつきの電流変動はオペアンプ回路のばらつき耐性を高めるよう作用し、TBCSはPVTに適応した電流を生成することが可能である。
+
+遅延の式よりCが増えるとTBCSが生成する電流も同様に増加し反対にCが減ると電流も減る。このような特性は一定の電流を生成する基準電流源という支店からみると一見望ましくない。一方でこのような容量ばらつきが起きる時、オペアンプの負荷容量も同様に増減する。負荷容量が増えるとオペアンプのGBWは減少してしまうものの、その減少分を補償するようにTBCSは電流を増やしGBWを一定に保つように働く。
+
+図左に負荷容量が増大するPVT条件を作り出した際のTBCS生成電流をプロットし、図右に同ばらつき下におけるGBWの変動をシミュレーションした結果を示す。Slowは負荷容量大、Fastは負荷容量小のばらつき条件をシミュレーションしている。SlowでTBCSの生成電流は10-15\%ほどは増加するが、この電流増加は負荷容量増大によって悪化したオペアンプのGBWを補償する。興味深いことにTBCSは一定電流を生成する理想電流源よりもオペアンプGBWはばらつきを通し一定に保つことができる。（ワースト条件の大事さについて説明）
+
+
+\section{Circuit Implementations}
+\subsection{Inverter}
+
+
+\subsection{R-DAC}
+
+\subsection{Phase detector}
+
+
+% ここまで書いた
+\section{Experiment Results}
+
+
+\section{Conclusions}
+To realize a fully adaptive noise scaling comparator, a VCO-based comparator with an eye-opening operation was introduced.  Even though the proposed VCO-based comparator was designed for a 13b ADC, this comparator can be used for further resolutions by carefully designing the jitter performance and the effective deadzone size. Moreover, since this comparator is mainly based on inverters and other simple logic cells, the comparator receives full benefits from process scaling. %Furthermore, the comparator characteristics can be analyzed with well-known knowledge of ring-oscillators. 
+
+\bibliographystyle{IEEEbib}
+\bibliography{main}
+
+
+\begin{IEEEbiography}
+[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{bio/1.jpg}}]{Kentaro Yoshioka}
+received his BS, MS, Ph.D degrees from Keio University, Japan. Currently, he is an Assistant Professor at Keio University. He worked with Toshiba during 2014-2021, developing circuitry for WiFi and LiDAR SoCs. During 2017-2018, he had been a visiting scholar at Stanford University, exploring efficient machine learning hardware and algorithms. 
+
+Currently, Dr. Yoshioka serves as a technical program member of Symp. VLSI circuits conference. He was the recipient of ASP-DAC 2013 Special Feature Award, the A-SSCC 2012 Best Design Award, and 1st place winner of Kaggle 2020 Prostate Cancer Grade Assessment (PANDA) Challenge.
+\end{IEEEbiography}
+
+\end{document}
