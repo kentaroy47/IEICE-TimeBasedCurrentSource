@@ -268,6 +268,14 @@ While jitter is also an important design factor in DLLs, the effect is small in 
 
 \begin{figure}[!t]
 \centering
+ \includegraphics[width=0.5\textwidth]{figs/phasemargin.png}
+  \caption{Simulation result of the opamp phase margin when biased with TBCS, ideal and BGR current source $I_{ref}$ under PVT variations, respectively.
+}
+\label{opamp_pm}
+\end{figure}
+
+\begin{figure}[!t]
+\centering
  \includegraphics[width=0.3\textwidth]{figs/mc.png}
   \caption{(a) Monte-Carlo simulation results of the CSD delay. (b) Monte-Carlo simulation results of the TBCS $I_{ref}$ under typical conditions.
 }
@@ -295,12 +303,7 @@ While jitter is also an important design factor in DLLs, the effect is small in 
 \label{sndr}
 \end{figure}
 
-\begin{figure}[!t]
-\centering
- \includegraphics[width=0.5\textwidth]{figs/comparison.png}
-  \caption{\textcolor{red}{Performance comparison.}}
-\label{comparison}
-\end{figure}
+
 
 % ??????????????
 \qquad The prototype TBCS was fabricated with 28nm CMOS, and the chip photograph is shown in Fig. \ref{chip}. TBCS occupies a very small area of $46um \times 26um$ (0.0012$mm^2$). Unlike the BGR, TBCS does not require bipolar transistors or amplifiers and can be easily designed in advanced CMOS with low supply voltage. Since bipolar transistors and opamps have poor CMOS scaling characteristics, realizing them in scaled CMOS results in a relatively high cost. In the prototype chip, the TBCS is integrated into the ADC of ref.\cite{yoshioka201728}. Since the prototype does not have an $I_{ref}$ monitoring pin, it was not possible to directly measure the detailed characteristics of the TBCS. Thus, we mainly report simulation analysis in this paper\footnote{For NDA reasons, all simulation results are reported based on the circuit reimplemented in 65nm CMOS. There is no significant change in the fundamental TBCS performance.}
@@ -317,17 +320,31 @@ On the other hand, the simulated TBCS $I_{ref}$ is reported in Fig.\ref{iref_pvt
 We report the opamp GBW simulation in Fig.\ref{iref_gbw}, where the opamp was biased with BGR, ideal, and TBCS current sources at different PVT variations, respectively. Identical to the simulation in Fig.\ref{cvar}, we simulate via a simple two-stage differential opamp implemented inside an SC circuit.
 As discussed, since the BGR ref reduces its current in the SS condition, the GBW is also significantly reduced. In the worst corner, the opamp GBW degrades by almost 30\%, significantly increasing the opamp design margin.
 On the other hand, TBCS can track PVT with delay-locking, and the obtained worst-case opamp GBW is almost the same as that of the ideal current source. Moreover, even in the worst corner, the GBW degradation is only 18\%, which is only half of BGR ref. Thus, TBCS significantly relaxes the opamp design margin and contributes to reducing the system power consumption.
-\textcolor{red}{The GBW variance of TBCS in Fig.\ref{iref_gbw} is larger than Fig.\ref{cvar} because the supply voltage fluctuation of $\pm$100mV is also included in Fig.\ref{iref_gbw}. Since the transistors of TBCS and opamps operate in different regions, the effects of supply voltage change cannot be fully absorbed.}
+\textcolor{red}{The GBW variance of TBCS in Fig.\ref{iref_gbw} is larger than Fig.\ref{cvar} because the supply voltage fluctuation of $\pm$100mV is also included in Fig.\ref{iref_gbw}. Since the transistors of TBCS and opamps operate in different regions, the effects of supply voltage change cannot be fully absorbed.
+In addition, we report the opamp phase margins under similar simulation conditions. The opamp is designed with a phase margin of 55$^\circ$@Typ. for high-speed operations, and its function is guaranteed up to 50$^\circ$. While the BGR-biased opamp falls short in some corners, TBCS, helds a constant phase margin over 40$^\circ$ due to its current compensation under severe corner conditions.}
+
+\textcolor{red}{Next, we will discuss the opamp power reduction effect with TBCS, based on the results in Fig.\ref{iref_gbw}. Here, we assume that the opamp is to be designed to achieve 0.82 GBW in all corners. On the other hand, since BGR biased opamps can only achieve 0.7 GBW in the worst case, we must increase the opamp current to lift the GBW. The relationship between opamp GBW and $g_m$ is described as:
+\begin{eqnarray}
+    \centering
+    GBW = \frac{g_m}{2 \pi C_L}
+\end{eqnarray}
+Let's assume a constant current density opamp where doubling the $g_m$ also doubles the opamp power. Thus, for BGRs, the opamp power must be increased by 20\% to lift the GBW of the worst corner to match our design criteria. Therefore, we can summarized that the use of TBCS will reduce the opamp power by 20\%, compared to BGR biasing methods.}
 
 % monte
 Fig.\ref{monte} shows the results of the TBCS Monte Carlo analysis. The overall delay variation is about $\sigma= 30$ps in this design, which is small enough compared to the TDC LSB step of 600ps. As can be seen from the results of Fig.\ref{monte}(b), the effect of mismatch on $I_{ref}$ is also tiny compared to the current resolution of 1.3uA. %If a more accurate current generation is demanded, a finer TDC LSB will be required and the CSD variation may be reduced.
 
 % ADC????????????????.
 \textcolor{red}{
-On the other hand, we confirmed successful SC and ADC operation over a wide range of environmental variations by measurements, suggesting that TBCS is fully functioning. %??????????????
-The TBCS integrated SC circuit and the schematic showing the TBCS, and opamp integration is shown in Fig.\ref{scap} and Fig.\ref{opamp}, respectively. Moreover, Fig.\ref{sndr} shows the ADC measurement results, which uses the TBCS as a current source. The SC circuit employs two-stage amplification: the opamp biased by TBCS performs coarse amplification and the successive approximation circuit performs fine amplification. The ADC achieves a high SNDR (60dB) at a range of -40 to 125$^\circ$C, and note that such accuracy cannot be obtained if neither the TBCS nor the opamp is not functioning. }
+The schematic of the SC circuit and the TBCS+opamp integration is shown in Fig.\ref{scap} and Fig.\ref{opamp}, respectively. Moreover, Fig.\ref{sndr} shows the ADC measurement results, which uses the TBCS as a current source. The SC circuit employs two-stage amplification: the opamp biased by TBCS performing coarse amplification and the successive approximation circuit performs fine amplification. The ADC achieves a high SNDR (60dB) at a range of -40 to 125$^\circ$C; this results shows that TBCS is functioning in silicon, with wide-range environment changes.}
 
-\textcolor{red}{Lastly, we compare TBCS against published current sources with uA order outputs in Fig.\ref{comparison}. While most aim to generate a temperature-insensitive current with PTAT/CTAT, the current generated by these works depends mainly on the absolute resistor value. To cancel out resistor variations, high-cost resistance calibration must be done as in ref. \cite{osipov2016temperature}. Although the basic idea under the proposed TBCS is simple, a temperature and resistor insensitive current source are realized by exploiting PVT-insensitive frequency information as a reference. In addition, to create accurate PTAT currents, large transistors are required to reduce channel modulation effects and transistor mismatch, which is a drawback in scaled CMOS designs (e.g., ref. \cite{wadhwa2017high} is a BGR fabricated in 16nm CMOS but with an area 10 times larger than TBCS). On the other hand, TBCS does not rely on transistor characteristics and is mostly digital, a good feature for scaled CMOS designs.}
+\begin{table*}[!t]
+\centering
+\caption{\textcolor{red}{Performance comparison between published current source designs.}}
+ \includegraphics[width=0.9\textwidth]{figs/comparison.png}
+\label{comparison}
+\end{table*}
+
+\textcolor{red}{Lastly, we compare TBCS against published current sources with uA order outputs in Table \ref{comparison}. While most aim to generate a temperature-insensitive current with PTAT/CTAT, the current generated by these works depends mainly on the absolute resistor value. To cancel out resistor variations, high-cost resistance calibration must be done as in ref. \cite{osipov2016temperature}. Although the basic idea under the proposed TBCS is simple, a calibration-free temperature and resistor insensitive current source is realized by exploiting PVT-insensitive frequency information as a reference. In addition, to create accurate PTAT currents, large transistors are required to reduce channel modulation effects and transistor mismatch, which is a drawback in scaled CMOS designs (e.g., ref. \cite{wadhwa2017high} is a BGR fabricated in 16nm CMOS but with an area 10 times larger than TBCS). On the other hand, TBCS does not rely on transistor characteristics and is mostly digital, a good feature for scaled CMOS designs.}
 
 \section{Conclusions}
 \qquad We proposed a Time-Based Current Source (TBCS), which is a resistor-variation tolerant reference current source circuit suitable for scaled CMOS. TBCS utilizes the input clock time information and delay-locking, where the load capacitors determine the delay. This decouples the generated current from resistor values, enabling a robust reference current source.  Simulation results showed that the TBCS can halve the current variation compared to a bandgap current source under wide PVT variations. When utilized as the opamp's bias, TBCS achieves the same opamp GBW as an ideal current source through PVT variations. In addition, TBCS is realized mainly with digital circuits and consumes a very small area of 1200um$^2$ when fabricated with 28nm CMOS.
